@@ -119,10 +119,9 @@ public final class FramedSnappyCompressorInputStreamTest
             assertEquals(3, in.available()); // remainder of first uncompressed block
             assertEquals(3, in.read(new byte[5], 0, 3));
             assertEquals('5', in.read());
-            assertEquals(4, in.available()); // remainder of literal
+            assertEquals(0, in.available()); // end of chunk, must read next one
             assertEquals(4, in.read(new byte[5], 0, 4));
             assertEquals('5', in.read());
-            assertEquals(19, in.available()); // remainder of copy
             in.close();
         }
     }
@@ -167,6 +166,26 @@ public final class FramedSnappyCompressorInputStreamTest
                     in.close();
                 }
             }
+        }
+    }
+
+    /**
+     * @see "https://issues.apache.org/jira/browse/COMPRESS-358"
+     */
+    @Test
+    public void readIWAFileWithBiggerOffset() throws Exception {
+        File o = new File(dir, "COMPRESS-358.raw");
+        try (InputStream is = new FileInputStream(getFile("COMPRESS-358.iwa"));
+             FramedSnappyCompressorInputStream in =
+                 new FramedSnappyCompressorInputStream(is, 1<<16, FramedSnappyDialect.IWORK_ARCHIVE);
+             FileOutputStream out = new FileOutputStream(o)) {
+            IOUtils.copy(in, out);
+        }
+        try (FileInputStream a = new FileInputStream(o);
+             FileInputStream e = new FileInputStream(getFile("COMPRESS-358.uncompressed"))) {
+            byte[] expected = IOUtils.toByteArray(e);
+            byte[] actual = IOUtils.toByteArray(a);
+            assertArrayEquals(expected, actual);
         }
     }
 

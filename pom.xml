@@ -20,12 +20,12 @@
   <parent>
     <groupId>org.apache.commons</groupId>
     <artifactId>commons-parent</artifactId>
-    <version>40</version>
+    <version>42</version>
   </parent>
 
   <groupId>org.apache.commons</groupId>
   <artifactId>commons-compress</artifactId>
-  <version>1.13-SNAPSHOT</version>
+  <version>1.14-SNAPSHOT</version>
   <name>Apache Commons Compress</name>
   <url>http://commons.apache.org/proper/commons-compress/</url>
   <!-- The description is not indented to make it look better in the release notes -->
@@ -46,7 +46,13 @@ jar, tar, zip, dump, 7z, arj.
     <commons.release.version>${project.version}</commons.release.version>
     <commons.rc.version>RC1</commons.rc.version>
     <powermock.version>1.6.4</powermock.version>
-    <commons.pmd-plugin.version>3.6</commons.pmd-plugin.version>
+    <commons.pmd-plugin.version>3.7</commons.pmd-plugin.version>
+
+    <!-- only show issues of the current version -->
+    <commons.changes.onlyCurrentVersion>true</commons.changes.onlyCurrentVersion>
+
+    <!-- generate report even if there are binary incompatible changes -->
+    <commons.japicmp.breakBuildOnBinaryIncompatibleModifications>false</commons.japicmp.breakBuildOnBinaryIncompatibleModifications>
   </properties>
 
   <issueManagement>
@@ -64,7 +70,7 @@ jar, tar, zip, dump, 7z, arj.
     <dependency>
       <groupId>org.tukaani</groupId>
       <artifactId>xz</artifactId>
-      <version>1.5</version>
+      <version>1.6</version>
       <optional>true</optional>
     </dependency>
     <dependency>
@@ -195,6 +201,19 @@ jar, tar, zip, dump, 7z, arj.
             </tags>
           </configuration> 
         </plugin>
+        <plugin>
+          <groupId>org.apache.rat</groupId>
+          <artifactId>apache-rat-plugin</artifactId>
+          <version>${commons.rat.version}</version>
+          <configuration>
+            <excludes>
+              <!-- files used during tests -->
+              <exclude>src/test/resources/**</exclude>
+              <exclude>.pmd</exclude>
+              <exclude>.projectile</exclude>
+            </excludes>
+          </configuration>
+        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
@@ -249,12 +268,6 @@ jar, tar, zip, dump, 7z, arj.
   <reporting>
     <plugins>
       <plugin>
-        <!-- generate a code coverage report -->
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>cobertura-maven-plugin</artifactId>
-        <version>2.7</version>
-      </plugin>
-      <plugin>
         <!-- generate the PMD reports -->
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-pmd-plugin</artifactId>
@@ -303,27 +316,12 @@ jar, tar, zip, dump, 7z, arj.
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>findbugs-maven-plugin</artifactId>
-        <version>3.0.3</version>
+        <version>3.0.4</version>
         <configuration>
           <threshold>Normal</threshold>
           <effort>Default</effort>
           <excludeFilterFile>${basedir}/findbugs-exclude-filter.xml</excludeFilterFile>
        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.rat</groupId>
-        <artifactId>apache-rat-plugin</artifactId>
-        <version>${commons.rat.version}</version>
-        <configuration>
-          <excludes>
-            <!-- files used during tests -->
-            <exclude>src/test/resources/**</exclude>
-            <exclude>.pmd</exclude>
-            <exclude>.gitignore</exclude>
-            <exclude>.gitattributes</exclude>
-            <exclude>.projectile</exclude>
-          </excludes>
-        </configuration>
       </plugin>
     </plugins>
   </reporting>

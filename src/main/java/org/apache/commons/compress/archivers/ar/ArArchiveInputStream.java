@@ -55,11 +55,11 @@ public class ArArchiveInputStream extends ArchiveInputStream {
     private long entryOffset = -1;
 
     // cached buffers - must only be used locally in the class (COMPRESS-172 - reduce garbage collection)
-    private final byte[] NAME_BUF = new byte[16];
-    private final byte[] LAST_MODIFIED_BUF = new byte[12];
-    private final byte[] ID_BUF = new byte[6];
-    private final byte[] FILE_MODE_BUF = new byte[8];
-    private final byte[] LENGTH_BUF = new byte[10];
+    private final byte[] nameBuf = new byte[16];
+    private final byte[] lastModifiedBuf = new byte[12];
+    private final byte[] idBuf = new byte[6];
+    private final byte[] fileModeBuf = new byte[8];
+    private final byte[] lengthBuf = new byte[10];
 
     /**
      * Constructs an Ar input stream with the referenced stream
@@ -109,13 +109,13 @@ public class ArArchiveInputStream extends ArchiveInputStream {
             return null;
         }
 
-        IOUtils.readFully(this, NAME_BUF);
-        IOUtils.readFully(this, LAST_MODIFIED_BUF);
-        IOUtils.readFully(this, ID_BUF);
-        final int userId = asInt(ID_BUF, true);
-        IOUtils.readFully(this, ID_BUF);
-        IOUtils.readFully(this, FILE_MODE_BUF);
-        IOUtils.readFully(this, LENGTH_BUF);
+        IOUtils.readFully(this, nameBuf);
+        IOUtils.readFully(this, lastModifiedBuf);
+        IOUtils.readFully(this, idBuf);
+        final int userId = asInt(idBuf, true);
+        IOUtils.readFully(this, idBuf);
+        IOUtils.readFully(this, fileModeBuf);
+        IOUtils.readFully(this, lengthBuf);
 
         {
             final byte[] expected = ArchiveUtils.toAsciiBytes(ArArchiveEntry.TRAILER);
@@ -136,13 +136,13 @@ public class ArArchiveInputStream extends ArchiveInputStream {
 //        GNU ar uses a '/' to mark the end of the filename; this allows for the use of spaces without the use of an extended filename.
 
         // entry name is stored as ASCII string
-        String temp = ArchiveUtils.toAsciiString(NAME_BUF).trim();
+        String temp = ArchiveUtils.toAsciiString(nameBuf).trim();
         if (isGNUStringTable(temp)) { // GNU extended filenames entry
-            currentEntry = readGNUStringTable(LENGTH_BUF);
+            currentEntry = readGNUStringTable(lengthBuf);
             return getNextArEntry();
         }
 
-        long len = asLong(LENGTH_BUF);
+        long len = asLong(lengthBuf);
         if (temp.endsWith("/")) { // GNU terminator
             temp = temp.substring(0, temp.length() - 1);
         } else if (isGNULongName(temp)) {
@@ -159,9 +159,9 @@ public class ArArchiveInputStream extends ArchiveInputStream {
         }
 
         currentEntry = new ArArchiveEntry(temp, len, userId,
-                                          asInt(ID_BUF, true),
-                                          asInt(FILE_MODE_BUF, 8),
-                                          asLong(LAST_MODIFIED_BUF));
+                                          asInt(idBuf, true),
+                                          asInt(fileModeBuf, 8),
+                                          asLong(lastModifiedBuf));
         return currentEntry;
     }
 
@@ -172,38 +172,39 @@ public class ArArchiveInputStream extends ArchiveInputStream {
      * @return the extended file name; without trailing "/" if present.
      * @throws IOException if name not found or buffer not set up
      */
-    private String getExtendedName(final int offset) throws IOException{
+    private String getExtendedName(final int offset) throws IOException {
         if (namebuffer == null) {
             throw new IOException("Cannot process GNU long filename as no // record was found");
         }
-        for(int i=offset; i < namebuffer.length; i++){
-            if (namebuffer[i] == '\012' || namebuffer[i] == 0){
-                if (namebuffer[i-1]=='/') {
+        for (int i = offset; i < namebuffer.length; i++) {
+            if (namebuffer[i] == '\012' || namebuffer[i] == 0) {
+                if (namebuffer[i - 1] == '/') {
                     i--; // drop trailing /
                 }
-                return ArchiveUtils.toAsciiString(namebuffer, offset, i-offset);
+                return ArchiveUtils.toAsciiString(namebuffer, offset, i - offset);
             }
         }
-        throw new IOException("Failed to read entry: "+offset);
-    }
-    private long asLong(final byte[] input) {
-        return Long.parseLong(ArchiveUtils.toAsciiString(input).trim());
+        throw new IOException("Failed to read entry: " + offset);
     }
 
-    private int asInt(final byte[] input) {
-        return asInt(input, 10, false);
+    private long asLong(final byte[] byteArray) {
+        return Long.parseLong(ArchiveUtils.toAsciiString(byteArray).trim());
     }
 
-    private int asInt(final byte[] input, final boolean treatBlankAsZero) {
-        return asInt(input, 10, treatBlankAsZero);
+    private int asInt(final byte[] byteArray) {
+        return asInt(byteArray, 10, false);
     }
 
-    private int asInt(final byte[] input, final int base) {
-        return asInt(input, base, false);
+    private int asInt(final byte[] byteArray, final boolean treatBlankAsZero) {
+        return asInt(byteArray, 10, treatBlankAsZero);
     }
 
-    private int asInt(final byte[] input, final int base, final boolean treatBlankAsZero) {
-        final String string = ArchiveUtils.toAsciiString(input).trim();
+    private int asInt(final byte[] byteArray, final int base) {
+        return asInt(byteArray, base, false);
+    }
+
+    private int asInt(final byte[] byteArray, final int base, final boolean treatBlankAsZero) {
+        final String string = ArchiveUtils.toAsciiString(byteArray).trim();
         if (string.length() == 0 && treatBlankAsZero) {
             return 0;
         }

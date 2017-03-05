@@ -294,7 +294,7 @@ public class ZipArchiveEntry extends java.util.zip.ZipEntry
      * @return true if the entry represents a unix symlink, false otherwise.
      */
     public boolean isUnixSymlink() {
-        return (getUnixMode() & UnixStat.LINK_FLAG) == UnixStat.LINK_FLAG;
+        return (getUnixMode() & UnixStat.FILE_TYPE_FLAG) == UnixStat.LINK_FLAG;
     }
 
     /**
@@ -540,7 +540,7 @@ public class ZipArchiveEntry extends java.util.zip.ZipEntry
             mergeExtraFields(local, true);
         } catch (final ZipException e) {
             // actually this is not possible as of Commons Compress 1.1
-            throw new RuntimeException("Error parsing extra fields for entry: "
+            throw new RuntimeException("Error parsing extra fields for entry: " //NOSONAR
                                        + getName() + " - " + e.getMessage(), e);
         }
     }
@@ -566,7 +566,7 @@ public class ZipArchiveEntry extends java.util.zip.ZipEntry
                                       ExtraFieldUtils.UnparseableExtraField.READ);
             mergeExtraFields(central, false);
         } catch (final ZipException e) {
-            throw new RuntimeException(e.getMessage(), e);
+            throw new RuntimeException(e.getMessage(), e); //NOSONAR
         }
     }
 

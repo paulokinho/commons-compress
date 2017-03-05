@@ -30,6 +30,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.zip.ZipException;
 
 import org.apache.commons.compress.utils.IOUtils;
 import org.junit.Test;
@@ -199,5 +200,59 @@ public class ZipArchiveInputStreamTest {
             Arrays.fill(expected, (byte) 'a');
             assertArrayEquals(expected, IOUtils.toByteArray(in));
         }
+    }
+
+    /**
+     * Test case for
+     * <a href="https://issues.apache.org/jira/browse/COMPRESS-364"
+     * >COMPRESS-364</a>.
+     */
+    @Test
+    public void testWithBytesAfterData() throws Exception {
+        final int expectedNumEntries = 2;
+        final InputStream is = ZipArchiveInputStreamTest.class
+                .getResourceAsStream("/archive_with_bytes_after_data.zip");
+        final ZipArchiveInputStream zip = new ZipArchiveInputStream(is);
+
+        try {
+            int actualNumEntries = 0;
+            ZipArchiveEntry zae = zip.getNextZipEntry();
+            while (zae != null) {
+                actualNumEntries++;
+                readEntry(zip, zae);
+                zae = zip.getNextZipEntry();
+            }
+            assertEquals(expectedNumEntries, actualNumEntries);
+        } finally {
+            zip.close();
+        }
+    }
+
+    /**
+     * <code>getNextZipEntry()</code> should throw a <code>ZipException</code> rather than return
+     * <code>null</code> when an unexpected structure is encountered.
+     */
+    @Test
+    public void testThrowOnInvalidEntry() throws Exception {
+        final InputStream is = ZipArchiveInputStreamTest.class
+                .getResourceAsStream("/invalid-zip.zip");
+        final ZipArchiveInputStream zip = new ZipArchiveInputStream(is);
+
+        try {
+            zip.getNextZipEntry();
+            fail("IOException expected");
+        } catch (ZipException expected) {
+            assertTrue(expected.getMessage().contains("Unexpected record signature"));
+        } finally {
+            zip.close();
+        }
+    }
+
+    private static byte[] readEntry(ZipArchiveInputStream zip, ZipArchiveEntry zae) throws IOException {
+        final int len = (int)zae.getSize();
+        final byte[] buff = new byte[len];
+        zip.read(buff, 0, len);
+
+        return buff;
     }
 }

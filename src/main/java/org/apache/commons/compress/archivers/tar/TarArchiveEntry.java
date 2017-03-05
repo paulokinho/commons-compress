@@ -376,7 +376,7 @@ public class TarArchiveEntry implements TarConstants, ArchiveEntry {
      * @return True if the entries are equal.
      */
     public boolean equals(final TarArchiveEntry it) {
-        return getName().equals(it.getName());
+        return it != null && getName().equals(it.getName());
     }
 
     /**
@@ -650,6 +650,9 @@ public class TarArchiveEntry implements TarConstants, ArchiveEntry {
 
     /**
      * Get this entry's file.
+     *
+     * <p>This method is only useful for entries created from a {@code
+     * File} but not for entries read from an archive.</p>
      *
      * @return This entry's file.
      */
@@ -943,6 +946,9 @@ public class TarArchiveEntry implements TarConstants, ArchiveEntry {
      * If this entry represents a file, and the file is a directory, return
      * an array of TarEntries for this entry's children.
      *
+     * <p>This method is only useful for entries created from a {@code
+     * File} but not for entries read from an archive.</p>
+     *
      * @return An array of TarEntry's for this entry's children.
      */
     public TarArchiveEntry[] getDirectoryEntries() {
@@ -978,7 +984,7 @@ public class TarArchiveEntry implements TarConstants, ArchiveEntry {
                 writeEntryHeader(outbuf, TarUtils.FALLBACK_ENCODING, false);
             } catch (final IOException ex2) {
                 // impossible
-                throw new RuntimeException(ex2);
+                throw new RuntimeException(ex2); //NOSONAR
             }
         }
     }
@@ -1065,7 +1071,7 @@ public class TarArchiveEntry implements TarConstants, ArchiveEntry {
                 parseTarHeader(header, TarUtils.DEFAULT_ENCODING, true);
             } catch (final IOException ex2) {
                 // not really possible
-                throw new RuntimeException(ex2);
+                throw new RuntimeException(ex2); //NOSONAR
             }
         }
     }

@@ -24,6 +24,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.SeekableByteChannel;
 import java.util.zip.CRC32;
 import java.util.zip.Deflater;
 import java.util.zip.ZipEntry;
@@ -54,9 +56,9 @@ public abstract class StreamCompressor implements Closeable {
     private long sourcePayloadLength = 0;
     private long totalWrittenToOutputStream = 0;
 
-    private static final int bufferSize = 4096;
-    private final byte[] outputBuffer = new byte[bufferSize];
-    private final byte[] readerBuf = new byte[bufferSize];
+    private static final int BUFFER_SIZE = 4096;
+    private final byte[] outputBuffer = new byte[BUFFER_SIZE];
+    private final byte[] readerBuf = new byte[BUFFER_SIZE];
 
     StreamCompressor(final Deflater deflater) {
         this.def = deflater;
@@ -92,6 +94,18 @@ public abstract class StreamCompressor implements Closeable {
      */
     static StreamCompressor create(final DataOutput os, final Deflater deflater) {
         return new DataOutputCompressor(deflater, os);
+    }
+
+    /**
+     * Create a stream compressor with the given compression level.
+     *
+     * @param os       The SeekableByteChannel to receive output
+     * @param deflater The deflater to use for the compressor
+     * @return A stream compressor
+     * @since 1.13
+     */
+    static StreamCompressor create(final SeekableByteChannel os, final Deflater deflater) {
+        return new SeekableByteChannelCompressor(deflater, os);
     }
 
     /**
@@ -305,6 +319,22 @@ public abstract class StreamCompressor implements Closeable {
         protected final void writeOut(final byte[] data, final int offset, final int length)
                 throws IOException {
             raf.write(data, offset, length);
+        }
+    }
+
+    private static final class SeekableByteChannelCompressor extends StreamCompressor {
+        private final SeekableByteChannel channel;
+
+        public SeekableByteChannelCompressor(final Deflater deflater,
+                                             final SeekableByteChannel channel) {
+            super(deflater);
+            this.channel = channel;
+        }
+
+        @Override
+        protected final void writeOut(final byte[] data, final int offset, final int length)
+                throws IOException {
+            channel.write(ByteBuffer.wrap(data, offset, length));
         }
     }
 }

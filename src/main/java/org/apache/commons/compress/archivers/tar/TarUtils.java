@@ -193,7 +193,7 @@ public class TarUtils {
         if (negative) {
             // 2's complement
             val--;
-            val ^= (long) Math.pow(2, (length - 1) * 8) - 1;
+            val ^= (long) Math.pow(2.0, (length - 1) * 8.0) - 1;
         }
         return negative ? -val : val;
     }
@@ -267,7 +267,7 @@ public class TarUtils {
                 return parseName(buffer, offset, length, FALLBACK_ENCODING);
             } catch (final IOException ex2) {
                 // impossible
-                throw new RuntimeException(ex2);
+                throw new RuntimeException(ex2); //NOSONAR
             }
         }
     }
@@ -328,7 +328,7 @@ public class TarUtils {
                                        FALLBACK_ENCODING);
             } catch (final IOException ex2) {
                 // impossible
-                throw new RuntimeException(ex2);
+                throw new RuntimeException(ex2); //NOSONAR
             }
         }
     }

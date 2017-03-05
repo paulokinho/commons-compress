@@ -633,7 +633,7 @@ public class TarArchiveOutputStream extends ArchiveOutputStream {
 
     private void failForBigNumber(final String field, final long value, final long maxValue, final String additionalMsg) {
         if (value < 0 || value > maxValue) {
-            throw new RuntimeException(field + " '" + value
+            throw new RuntimeException(field + " '" + value //NOSONAR
                     + "' is too big ( > "
                     + maxValue + " )." + additionalMsg);
         }
@@ -677,14 +677,14 @@ public class TarArchiveOutputStream extends ArchiveOutputStream {
                 // of which are the link's name
                 final TarArchiveEntry longLinkEntry = new TarArchiveEntry(TarConstants.GNU_LONGLINK, linkType);
 
-                longLinkEntry.setSize(len + 1); // +1 for NUL
+                longLinkEntry.setSize(len + 1l); // +1 for NUL
                 transferModTime(entry, longLinkEntry);
                 putArchiveEntry(longLinkEntry);
                 write(encodedName.array(), encodedName.arrayOffset(), len);
                 write(0); // NUL terminator
                 closeArchiveEntry();
             } else if (longFileMode != LONGFILE_TRUNCATE) {
-                throw new RuntimeException(fieldName + " '" + name
+                throw new RuntimeException(fieldName + " '" + name //NOSONAR
                                            + "' is too long ( > "
                                            + TarConstants.NAMELEN + " bytes)");
             }

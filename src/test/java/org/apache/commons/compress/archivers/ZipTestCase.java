@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
 
 import org.apache.commons.compress.AbstractTestCase;
 import org.apache.commons.compress.archivers.zip.Zip64Mode;
@@ -41,6 +42,7 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.commons.compress.archivers.zip.ZipFile; 	
 import org.apache.commons.compress.archivers.zip.ZipMethod;
 import org.apache.commons.compress.utils.IOUtils;
+import org.apache.commons.compress.utils.SeekableInMemoryByteChannel;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -106,6 +108,49 @@ public final class ZipTestCase extends AbstractTestCase {
         assertEquals(file1.length(), result.length());
         result = results.get(1);
         assertEquals(file2.length(), result.length());
+    }
+
+    /**
+     * Archives 2 files and unarchives it again. If the file contents of result
+     * and source is the same, it looks like the operations have worked
+     * @throws Exception
+     */
+    @Test
+    public void testZipArchiveCreationInMemory() throws Exception {
+        final File file1 = getFile("test1.xml");
+        final File file2 = getFile("test2.xml");
+        final byte[] file1Contents = new byte[(int) file1.length()];
+        final byte[] file2Contents = new byte[(int) file2.length()];
+        IOUtils.readFully(new FileInputStream(file1), file1Contents);
+        IOUtils.readFully(new FileInputStream(file2), file2Contents);
+
+        SeekableInMemoryByteChannel c = new SeekableInMemoryByteChannel();
+        try (ZipArchiveOutputStream os = new ZipArchiveOutputStream(c)) {
+            os.putArchiveEntry(new ZipArchiveEntry("testdata/test1.xml"));
+            os.write(file1Contents);
+            os.closeArchiveEntry();
+
+            os.putArchiveEntry(new ZipArchiveEntry("testdata/test2.xml"));
+            os.write(file2Contents);
+            os.closeArchiveEntry();
+        }
+
+        // Unarchive the same
+        final List<byte[]> results = new ArrayList<>();
+
+        try (ArchiveInputStream in = new ArchiveStreamFactory()
+             .createArchiveInputStream("zip", new ByteArrayInputStream(c.array()))) {
+
+            ZipArchiveEntry entry;
+            while((entry = (ZipArchiveEntry)in.getNextEntry()) != null) {
+                byte[] result = new byte[(int) entry.getSize()];
+                IOUtils.readFully(in, result);
+                results.add(result);
+            }
+        }
+
+        assertArrayEquals(results.get(0), file1Contents);
+        assertArrayEquals(results.get(1), file2Contents);
     }
 
     /**
@@ -199,6 +244,7 @@ public final class ZipTestCase extends AbstractTestCase {
         final File input = getFile("OSX_ArchiveWithNestedArchive.zip");
 
         final List<String> results = new ArrayList<>();
+        final List<ZipException> expectedExceptions = new ArrayList<>();
 
         final InputStream is = new FileInputStream(input);
         ArchiveInputStream in = null;
@@ -206,15 +252,20 @@ public final class ZipTestCase extends AbstractTestCase {
             in = new ArchiveStreamFactory().createArchiveInputStream("zip", is);
 
             ZipArchiveEntry entry = null;
-            while((entry = (ZipArchiveEntry)in.getNextEntry()) != null) {
+            while ((entry = (ZipArchiveEntry) in.getNextEntry()) != null) {
                 results.add(entry.getName());
 
                 final ArchiveInputStream nestedIn = new ArchiveStreamFactory().createArchiveInputStream("zip", in);
-                ZipArchiveEntry nestedEntry = null;
-                while((nestedEntry = (ZipArchiveEntry)nestedIn.getNextEntry()) != null) {
-                    results.add(nestedEntry.getName());
+                try {
+                    ZipArchiveEntry nestedEntry = null;
+                    while ((nestedEntry = (ZipArchiveEntry) nestedIn.getNextEntry()) != null) {
+                        results.add(nestedEntry.getName());
+                    }
+                } catch (ZipException ex) {
+                    // expected since you cannot create a final ArchiveInputStream from test3.xml
+                    expectedExceptions.add(ex);
                 }
-               // nested stream must not be closed here
+                // nested stream must not be closed here
             }
         } finally {
             if (in != null) {
@@ -223,10 +274,11 @@ public final class ZipTestCase extends AbstractTestCase {
         }
         is.close();
 
-        results.contains("NestedArchiv.zip");
-        results.contains("test1.xml");
-        results.contains("test2.xml");
-        results.contains("test3.xml");
+        assertTrue(results.contains("NestedArchiv.zip"));
+        assertTrue(results.contains("test1.xml"));
+        assertTrue(results.contains("test2.xml"));
+        assertTrue(results.contains("test3.xml"));
+        assertEquals(1, expectedExceptions.size());
     }
 
     @Test

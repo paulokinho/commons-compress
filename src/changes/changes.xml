@@ -42,7 +42,34 @@ The <action> type attribute can be add,update,fix,remove.
     <title>commons-compress</title>
   </properties>
   <body>
-    <release version="1.13" date="not released, yet" 
+    <release version="1.14" date="not released, yet"
+             description="Release 1.14">
+      <action issue="COMPRESS-378" type="fix" date="2017-01-09">
+        SnappyCompressorInputStream slides the window too early
+        leading to ArrayIndexOutOfBoundsExceptions for some streams.
+      </action>
+      <action issue="COMPRESS-246" type="add" date="2017-01-10">
+        Added write support for Snappy.
+      </action>
+      <action issue="COMPRESS-358" type="update" date="2017-01-10">
+        The blocksize for FramedSnappyCompressorInputStream can now be
+        configured as some IWA files seem to be using blocks larger
+        than the default 32k.
+      </action>
+      <action issue="COMPRESS-379" type="fix" date="2017-01-15"
+              due-to="Guillaume Boué">
+        ZipArchiveEntry#isUnixSymlink now only returns true if the
+        corresponding link flag is the only file-type flag set.
+      </action>
+      <action issue="COMPRESS-271" type="add" date="2017-02-07">
+        Added support for LZ4 (block and frame format).
+      </action>
+      <action type="update" date="2017-02-15" due-to="Thomas Meyer">
+        BZip2CompressorInputstream now uses BitInputStream internally.
+        Pull Request #13.
+      </action>
+    </release>
+    <release version="1.13" date="2016-12-29"
              description="Release 1.13 - API compatible to 1.12 but requires Java 7 at runtime.">
       <action issue="COMPRESS-360" type="update" date="2016-06-25" dev="ggregory">
         Update Java requirement from 6 to 7.
@@ -51,6 +78,52 @@ The <action> type attribute can be add,update,fix,remove.
         BitInputStream could return bad results when overflowing
         internally - if two consecutive reads tried to read more than
         64 bits.
+      </action>
+      <action issue="COMPRESS-366" type="update" date="2016-10-07">
+        Clarified which TarArchiveEntry methods are useless for
+        entries read from an archive.
+      </action>
+      <action issue="COMPRESS-364" type="fix" date="2016-10-07"
+              due-to="Mike Mole">
+        ZipArchiveInputStream.closeEntry does not properly advance to
+        next entry if there are junk bytes at end of data section
+      </action>
+      <action issue="COMPRESS-327" type="add" date="2016-10-12">
+        SevenZFile, SevenZOutputFile, ZipFile and
+        ZipArchiveOutputStream can now work on non-file resources if
+        they can be accessed via SeekableByteChannel.
+      </action>
+      <action issue="COMPRESS-368" type="add" date="2016-11-15">
+        Allow compressor extensions through a standard JRE ServiceLoader.
+      </action>
+      <action issue="COMPRESS-369" type="add" date="2016-11-15">
+        Allow archive extensions through a standard JRE ServiceLoader.
+      </action>
+      <action issue="COMPRESS-373" type="add" date="2016-11-29">
+        Add write support for the legacy LZMA format, this requires XZ
+        for Java 1.6.
+      </action>
+      <action issue="COMPRESS-374" type="add" date="2016-11-29">
+        Add write support for the legacy LZMA stream to 7z, this
+        requires XZ for Java 1.6.
+      </action>
+      <action issue="COMPRESS-375" type="add" date="2016-12-04"
+              due-to="Plamen Totev">
+        Allow the clients of ParallelScatterZipCreator to provide
+        ZipArchiveEntryRequestSupplier.
+      </action>
+      <action issue="COMPRESS-367" type="fix" date="2016-12-09"
+              due-to="Mike Mole">
+        ZipArchiveInputStream now throws an Exception if it encounters
+        a broken ZIP archive rather than signaling end-of-archive.
+      </action>
+      <action issue="COMPRESS-377" type="fix" date="2016-12-20">
+        ScatterZipOutputStream didn't close the StreamCompressor
+        causing a potential resource leak.
+      </action>
+      <action issue="COMPRESS-372" type="add" date="2016-12-20">
+        Add a version-independent link to the API docs of the latest
+        release.
       </action>
     </release>
     <release version="1.12" date="2016-06-21"
